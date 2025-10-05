@@ -111,8 +111,6 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
     return canvas.toDataURL("image/png");
   };
 
-  // Default values inlined into resetToDefault
-
   const resetToDefault = useCallback(() => {
     setScale(1);
     setRotation(0);
@@ -561,7 +559,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
             return;
           }
         } catch {}
-        // Fallback to previous hash-based approach
+
         const fallbackTarget = `${
           window.location.origin
         }/download#${encodeURIComponent(dataUrl)}`;
@@ -576,13 +574,11 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
         return;
       }
 
-      // Normal browsers: trigger direct download
       const link = document.createElement("a");
       link.download = "image.png";
       link.href = dataUrl;
       link.click();
     } catch {
-      // Fallback
       const link = document.createElement("a");
       link.download = "image.png";
       link.href = dataUrl;
@@ -595,7 +591,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
       className={`min-h-screen w-full flex flex-col font-sans relative overflow-hidden`}
     >
       <Header></Header>
-      {/* Subtle grid pattern overlay */}
+
       <div
         className="fixed inset-0 -z-10 opacity-[0.03]"
         style={{
