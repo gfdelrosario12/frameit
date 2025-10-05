@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -58,6 +58,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
   const [rotationInputValue, setRotationInputValue] = useState<string>("0");
   const [scaleError, setScaleError] = useState<string>("");
   const [rotationError, setRotationError] = useState<string>("");
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string>("");
 
   const [initialDistance, setInitialDistance] = useState<number>(0);
   const [initialScale, setInitialScale] = useState<number>(1);
@@ -108,43 +110,28 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
     return canvas.toDataURL("image/png");
   };
 
-  const defaultSettings = {
-    scale: 1,
-    rotation: 0,
-    position: { x: 0, y: 0 },
-  };
+  // Default values inlined into resetToDefault
 
-  const resetToDefault = () => {
-    setScale(defaultSettings.scale);
-    setRotation(defaultSettings.rotation);
-    setPosition(defaultSettings.position);
-    setScaleInputValue(defaultSettings.scale.toString());
-    setRotationInputValue(defaultSettings.rotation.toString());
+  const resetToDefault = useCallback(() => {
+    setScale(1);
+    setRotation(0);
+    setPosition({ x: 0, y: 0 });
+    setScaleInputValue("1");
+    setRotationInputValue("0");
     setScaleError("");
     setRotationError("");
-  };
+  }, []);
 
   useEffect(() => {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href =
-      "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap";
-    document.head.appendChild(link);
-
     if (typeof window !== "undefined") {
       const img = new window.Image();
-
       img.onload = () => {
-        console.log("Frame image loaded successfully");
         frameRef.current = img;
         setFrameLoaded(true);
       };
-
       img.onerror = () => {
-        console.error("Error loading frame image, using fallback");
         const fallbackDataUrl = createFallbackFrame();
         img.onload = () => {
-          console.log("Fallback frame loaded");
           frameRef.current = img;
           setFrameLoaded(true);
         };
@@ -152,49 +139,49 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
       };
       img.src = frameSrc;
     }
+  }, []);
 
+  useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas) {
-      const preventDefaultTouchAction = (e: TouchEvent) => {
-        if (e.target === canvas && (isDragging || isPinching)) {
-          e.preventDefault();
-        }
-      };
-
-      document.addEventListener("touchmove", preventDefaultTouchAction, {
-        passive: false,
-      });
-
-      return () => {
-        document.removeEventListener("touchmove", preventDefaultTouchAction);
-        document.head.removeChild(link);
-      };
-    }
-
+    if (!canvas) return;
+    const preventDefaultTouchAction = (e: TouchEvent) => {
+      if (e.target === canvas && (isDragging || isPinching)) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", preventDefaultTouchAction, {
+      passive: false,
+    });
     return () => {
-      document.head.removeChild(link);
+      document.removeEventListener("touchmove", preventDefaultTouchAction);
     };
   }, [isDragging, isPinching]);
 
+  const loadImageFromFile = (file: File) => {
+    if (!file) return;
+    if (!file.type.match("image.*")) {
+      setUploadError("Please select a valid image file.");
+      return;
+    }
+    setUploadError("");
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (!event.target || typeof event.target.result !== "string") return;
+      const img = new window.Image();
+      img.onload = () => {
+        setUploadedImage(img);
+        resetToDefault();
+        setShowSettings(true);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target || !e.target.files || e.target.files.length === 0) return;
-
     const file = e.target.files[0];
-    if (file && file.type.match("image.*")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (!event.target || typeof event.target.result !== "string") return;
-
-        const img = new window.Image();
-        img.onload = () => {
-          setUploadedImage(img);
-          resetToDefault();
-          setShowSettings(true);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
+    if (file) loadImageFromFile(file);
   };
 
   const changeImage = () => {
@@ -226,6 +213,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
   const endDrag = () => {
     setIsDragging(false);
   };
+
+  // drag-and-drop handled inline on the container to avoid extra handlers
 
   const getDistance = (touch1: Touch, touch2: Touch): number => {
     const dx = touch1.clientX - touch2.clientX;
@@ -429,6 +418,93 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
     }
   }, [uploadedImage, scale, position, rotation, frameLoaded]);
 
+  const fitToCanvas = () => {
+    if (!uploadedImage || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const scaleX = canvas.width / uploadedImage.width;
+    const scaleY = canvas.height / uploadedImage.height;
+    const newScale = Math.min(scaleX, scaleY);
+    const boundedScale = Math.min(Math.max(newScale, 0.1), 10);
+    setScale(boundedScale);
+    setScaleInputValue(boundedScale.toFixed(2));
+    setPosition({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!uploadedImage) return;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const moveStep = e.shiftKey ? 20 : 10;
+      switch (e.key) {
+        case "ArrowUp":
+          e.preventDefault();
+          setPosition((p) => ({ x: p.x, y: p.y - moveStep }));
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          setPosition((p) => ({ x: p.x, y: p.y + moveStep }));
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          setPosition((p) => ({ x: p.x - moveStep, y: p.y }));
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          setPosition((p) => ({ x: p.x + moveStep, y: p.y }));
+          break;
+        case "+":
+        case "=":
+          e.preventDefault();
+          setScale((s) => {
+            const next = Math.min(s + 0.1, 10);
+            setScaleInputValue(next.toFixed(1));
+            return next;
+          });
+          break;
+        case "-":
+          e.preventDefault();
+          setScale((s) => {
+            const next = Math.max(s - 0.1, 0.1);
+            setScaleInputValue(next.toFixed(1));
+            return next;
+          });
+          break;
+        case "[":
+          e.preventDefault();
+          setRotation((r) => {
+            const next = (r - 1 + 360) % 360;
+            setRotationInputValue(next.toString());
+            return next;
+          });
+          break;
+        case "]":
+          e.preventDefault();
+          setRotation((r) => {
+            const next = (r + 1) % 360;
+            setRotationInputValue(next.toString());
+            return next;
+          });
+          break;
+        case "0":
+          e.preventDefault();
+          resetToDefault();
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [uploadedImage, resetToDefault]);
+
   const downloadImage = async () => {
     if (!canvasRef.current) return;
     const dataUrl = canvasRef.current.toDataURL("image/png");
@@ -539,7 +615,24 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
         {/* Main content area */}
         <main className="flex-grow flex flex-col md:flex-row gap-4 h-full">
           {/* Canvas Container */}
-          <div className="relative flex items-center justify-center bg-white rounded-lg p-2 md:p-4 border w-auto h-auto mx-auto">
+          <div
+            className={`relative flex items-center justify-center rounded-lg p-2 md:p-4 border w-auto h-auto mx-auto ${
+              uploadedImage ? "bg-white" : "bg-gray-50"
+            } ${!uploadedImage || isDragOver ? "border-dashed" : ""} ${
+              isDragOver ? "ring-2 ring-blue-500" : ""
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragOver(true);
+            }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              const file = e.dataTransfer?.files?.[0];
+              if (file) loadImageFromFile(file);
+            }}
+          >
             <div className="relative max-h-180 max-w-180 aspect-square touch-none">
               <canvas
                 ref={canvasRef}
@@ -559,9 +652,13 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
               />
 
               {!uploadedImage && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <Upload className={`h-8 w-8 mb-4 ${colors.text}`} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+                  <Upload className={`h-8 w-8 ${colors.text}`} />
+                  <div className="text-sm text-gray-600 max-w-[14rem] hidden sm:block">
+                    Drag & drop an image here or
+                  </div>
                   <Button
+                    aria-label="Upload image"
                     className={`${colors.buttonBg} ${colors.buttonHover} ${colors.buttonText} font-medium px-6 py-2 text-sm rounded-md shadow-lg transition-all duration-200`}
                     onClick={() =>
                       document.getElementById("image-upload")?.click()
@@ -569,13 +666,9 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                   >
                     Upload Image
                   </Button>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageUpload}
-                  />
+                  {uploadError && (
+                    <div className="text-xs text-red-600">{uploadError}</div>
+                  )}
                 </div>
               )}
 
@@ -583,22 +676,14 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                 <button
                   className={`absolute bottom-4 right-4 ${colors.buttonBg} ${colors.buttonHover} p-2 rounded-full shadow-lg transition-all duration-200`}
                   onClick={() => setShowSettings(true)}
+                  title="Open settings"
+                  aria-label="Open settings"
                 >
-                  <Settings className="h-4 w-4 text-white" />
+                  <Settings className="h-4 w-4 text-gray-700" />
                 </button>
               )}
 
-              {uploadedImage && (
-                <div className="absolute bottom-4 left-4 flex gap-2">
-                  <div
-                    className={`${colors.textMuted} bg-black bg-opacity-40 px-2 py-1 rounded text-xs`}
-                  >
-                    {isPinching}
-                    {!isPinching && isDragging}
-                    {!isPinching && !isDragging && showSettings}
-                  </div>
-                </div>
-              )}
+              {/* debug overlay removed for cleaner UI */}
             </div>
           </div>
 
@@ -661,6 +746,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                             setScale(newScale);
                             setScaleInputValue(newScale.toFixed(1));
                           }}
+                          title="Zoom out (-)"
+                          aria-label="Zoom out"
                         >
                           <ZoomOut className="h-4 w-4" />
                         </button>
@@ -683,6 +770,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                             setScale(newScale);
                             setScaleInputValue(newScale.toFixed(1));
                           }}
+                          title="Zoom in (=)"
+                          aria-label="Zoom in"
                         >
                           <ZoomIn className="h-4 w-4" />
                         </button>
@@ -729,6 +818,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                             setRotation(newRotation);
                             setRotationInputValue(newRotation.toString());
                           }}
+                          title="Rotate -10° ([)"
+                          aria-label="Rotate counterclockwise"
                         >
                           <RotateCcw className="h-4 w-4" />
                         </button>
@@ -751,6 +842,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                             setRotation(newRotation);
                             setRotationInputValue(newRotation.toString());
                           }}
+                          title="Rotate +10° (])"
+                          aria-label="Rotate clockwise"
                         >
                           <RotateCw className="h-4 w-4" />
                         </button>
@@ -765,14 +858,24 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                       <p className="text-xs text-gray-500">
                         Drag the image to adjust position, pinch to zoom
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 h-8"
-                        onClick={() => setPosition({ x: 0, y: 0 })}
-                      >
-                        Center Image
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 h-8"
+                          onClick={() => setPosition({ x: 0, y: 0 })}
+                        >
+                          Center
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-sm border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 h-8"
+                          onClick={fitToCanvas}
+                        >
+                          Fit to Canvas
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Caption Section */}
