@@ -1,6 +1,5 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
@@ -20,6 +19,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Footer from "@/components/footer";
+import Header from "@/components/header";
 
 export default function ImageFrameOverlay() {
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(
@@ -591,38 +591,34 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col ${colors.bg} font-sans`}>
-      {/* Main container */}
-      <div className="flex flex-col h-full w-full max-w-6xl mx-auto px-4 py-4 md:py-6 space-y-4">
-        {/* Header */}
-        <header className="text-center mb-2">
-          <div className="flex justify-center mb-2">
-            <div className="relative w-[180px] h-[80px]">
-              <Image
-                src="/logo.png"
-                alt="FrameIt Logo"
-                layout="fill"
-                objectFit="contain"
-                priority
-              />
-            </div>
-          </div>
-          <h1
-            className={`md:text-base text-muted-foreground max-w-2xl mx-auto`}
-          >
-            Effortlessly frame your photos with just one click – made by ICPEP
-            SE - PUP Manila
-          </h1>
-        </header>
+    <div
+      className={`min-h-screen w-full flex flex-col font-sans relative overflow-hidden`}
+    >
+      <Header></Header>
+      {/* Subtle grid pattern overlay */}
+      <div
+        className="fixed inset-0 -z-10 opacity-[0.03]"
+        style={{
+          backgroundImage: `
+          linear-gradient(to right, #4B00A3 1px, transparent 1px),
+          linear-gradient(to bottom, #4B00A3 1px, transparent 1px)
+        `,
+          backgroundSize: "40px 40px",
+        }}
+      ></div>
 
+      {/* Main container */}
+      <div className="flex flex-col flex-1 h-full w-full max-w-6xl mx-auto px-4 py-4 md:py-6 pt-20 items-center justify-start md:justify-center relative z-10">
         {/* Main content area */}
-        <main className="flex-grow flex flex-col md:flex-row gap-4 h-full">
+        <main className="flex flex-col md:flex-row gap-4 w-full pb-10 md:pt-0">
           {/* Canvas Container */}
           <div
-            className={`relative flex items-center justify-center rounded-lg p-2 md:p-4 border shadow-2xl w-auto h-auto mx-auto ${
-              uploadedImage ? "bg-white" : "bg-gray-50"
+            className={`relative flex items-center justify-center rounded-lg p-2 md:p-4 border shadow-2xl w-auto h-auto mx-auto backdrop-blur-sm transition-all duration-300 ${
+              uploadedImage ? "bg-white/95" : "bg-white/80"
             } ${!uploadedImage || isDragOver ? "border-dashed" : ""} ${
-              isDragOver ? "ring-2 ring-primary" : ""
+              isDragOver
+                ? "ring-4 ring-primary/40 border-primary scale-[1.02]"
+                : "border-gray-200/60"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -693,10 +689,10 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
           {/* Settings Panel */}
           {uploadedImage && showSettings && (
             <div className="md:w-72 lg:w-80 flex-shrink-0 md:h-auto">
-              <Card className=" border border-gray-200 bg-white overflow-hidden h-full max-h-180">
-                <CardHeader className="px-4 bg-white border-b-1 border-gray-100">
+              <Card className="border border-gray-200/60 bg-white/95 backdrop-blur-sm overflow-hidden h-full max-h-180 shadow-xl">
+                <CardHeader className="px-4 bg-transparent border-b-1 border-gray-200/50">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg bg-white font-medium text-gray-700">
+                    <CardTitle className="text-lg font-medium text-gray-700">
                       Image Settings
                     </CardTitle>
                     <button
@@ -707,7 +703,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                     </button>
                   </div>
                 </CardHeader>
-                <CardContent className="bg-white">
+                <CardContent className="bg-transparent">
                   <div className="space-y-4">
                     {/* Scale Control */}
                     <div className="space-y-2">
@@ -887,7 +883,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                         Social Media Caption
                       </h4>
                       <div className="relative">
-                        <div className="p-2 border border-gray-200 rounded-md text-sm h-60 max-h-60 overflow-y-auto whitespace-pre-wrap break-words bg-gray-50 text-gray-800">
+                        <div className="p-2 border border-gray-200/60 rounded-md text-sm h-60 max-h-60 overflow-y-auto whitespace-pre-wrap break-words bg-white/50 text-gray-800 backdrop-blur-sm">
                           {caption}
                         </div>
                         <Button
@@ -941,6 +937,12 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
             </div>
           )}
         </main>
+
+        <div className="flex justify-center items-center pb-4 px-4">
+          <span className="text-xs sm:text-sm md:text-base text-muted-foreground font-medium text-center">
+            Effortlessly frame your photos with just one click.
+          </span>
+        </div>
       </div>
       <input
         id="image-upload"
@@ -949,6 +951,10 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
         className="hidden"
         onChange={handleImageUpload}
       />
+
+      <div className="fixed bottom-0 left-0 w-full z-50 bg-white/90 backdrop-blur-sm border-t border-gray-200">
+        <Footer />
+      </div>
     </div>
   );
 }
