@@ -19,6 +19,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import Footer from "@/components/footer";
 
 export default function ImageFrameOverlay() {
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(
@@ -69,7 +70,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
   const frameRef = useRef<HTMLImageElement | null>(null);
   const frameSrc = "/frame.png";
   const colors = {
-    bg: "bg-[white]",
+    bg: "bg-[#FFFFFF]",
     headerBg: "bg-[#05002D]",
     panelBg: "bg-[#FFFFFF]",
 
@@ -606,9 +607,11 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
               />
             </div>
           </div>
-          <h1 className={`md:text-base text-gray-600 max-w-2xl mx-auto`}>
+          <h1
+            className={`md:text-base text-muted-foreground max-w-2xl mx-auto`}
+          >
             Effortlessly frame your photos with just one click – made by ICPEP
-            SE - PUP
+            SE - PUP Manila
           </h1>
         </header>
 
@@ -616,10 +619,10 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
         <main className="flex-grow flex flex-col md:flex-row gap-4 h-full">
           {/* Canvas Container */}
           <div
-            className={`relative flex items-center justify-center rounded-lg p-2 md:p-4 border w-auto h-auto mx-auto ${
+            className={`relative flex items-center justify-center rounded-lg p-2 md:p-4 border shadow-2xl w-auto h-auto mx-auto ${
               uploadedImage ? "bg-white" : "bg-gray-50"
             } ${!uploadedImage || isDragOver ? "border-dashed" : ""} ${
-              isDragOver ? "ring-2 ring-blue-500" : ""
+              isDragOver ? "ring-2 ring-primary" : ""
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -653,7 +656,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
 
               {!uploadedImage && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-                  <Upload className={`h-8 w-8 ${colors.text}`} />
+                  <Upload className={`h-8 w-8 text-primary`} />
                   <div className="text-sm text-gray-600 max-w-[14rem] hidden sm:block">
                     Drag & drop an image here or
                   </div>
@@ -679,7 +682,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                   title="Open settings"
                   aria-label="Open settings"
                 >
-                  <Settings className="h-4 w-4 text-gray-700" />
+                  <Settings className="h-4 w-4 text-primary" />
                 </button>
               )}
 
@@ -725,7 +728,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                               ${
                                 scaleError
                                   ? "border-red-500 focus:ring-red-500"
-                                  : "focus:ring-blue-500"
+                                  : "focus:ring-primary"
                               }`}
                           />
                         </div>
@@ -797,7 +800,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                               ${
                                 rotationError
                                   ? "border-red-500 focus:ring-red-500"
-                                  : "focus:ring-blue-500"
+                                  : "focus:ring-primary"
                               }`}
                           />
                         </div>
@@ -926,7 +929,8 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
                       </Button>
                     </div>
                     <Button
-                      className="w-full h-9 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm shadow-md"
+                      variant="default"
+                      className="w-full h-9"
                       onClick={downloadImage}
                     >
                       <Download className="mr-2 h-4 w-4" /> Download Image
