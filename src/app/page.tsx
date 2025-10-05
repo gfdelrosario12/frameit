@@ -608,7 +608,7 @@ Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
       ></div>
 
       {/* Main container */}
-      <div className="flex flex-col flex-1 h-full w-full max-w-6xl mx-auto px-4 py-4 md:py-6 pt-20 items-center justify-start md:justify-center relative z-10">
+      <div className="flex flex-col flex-1 h-full w-full max-w-6xl mx-auto px-4 py-4 md:py-6 pt-10 items-center justify-start md:justify-center relative z-10">
         {/* Main content area */}
         <main className="flex flex-col md:flex-row gap-4 w-full pb-10 md:pt-0">
           {/* Canvas Container */}
