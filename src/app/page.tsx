@@ -46,8 +46,10 @@ As we open a new chapter through this year’s PUP CpE Freshmen Orientation, Gen
 
 Let’s light up the feed with innovation! Join the DP Blast and showcase your CoEbigan pride as we gear up for a future built to innovate.
 
-Join the DP blast through this link:
--
+📌 Join the DP blast through this link:
+- https://innovating-beyond2025.vercel.app
+- https://innovating-beyond2025.vercel.app
+- https://innovating-beyond2025.vercel.app
 
 Save the date — the future begins October 18 at PUP Bulwagang Balagtas. 🧡
 
